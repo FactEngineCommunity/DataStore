@@ -1,0 +1,116 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+DataStore
+</name>
+</assembly>
+<members>
+<member name="T:DataStore.My.Resources.Resources">
+<summary>
+  A strongly-typed resource class, for looking up localized strings, etc.
+</summary>
+</member>
+<member name="P:DataStore.My.Resources.Resources.ResourceManager">
+<summary>
+  Returns the cached ResourceManager instance used by this class.
+</summary>
+</member>
+<member name="P:DataStore.My.Resources.Resources.Culture">
+<summary>
+  Overrides the current thread's CurrentUICulture property for all
+  resource lookups using this strongly typed resource class.
+</summary>
+</member>
+<member name="M:DataStore.RecordsetProxy.#ctor">
+ <summary>
+ Paramerless Constructor
+ </summary>
+</member>
+<member name="M:DataStore.MyMethodExtensions.AppendRange(System.Array,System.Array)">
+ <summary>
+ Append to an array.
+ </summary>
+ <typeparam name="T"></typeparam>
+ <param name="original"></param>
+ <param name="rangeToAppend"></param>
+ <returns></returns>
+</member>
+<member name="M:DataStore.MyMethodExtensions.HasField(System.Object,System.String)">
+ <summary>
+ Limit to use with ExpandoObjects please.
+ </summary>
+ <param name="expando"></param>
+ <param name="fieldName"></param>
+ <returns></returns>
+</member>
+<member name="M:DataStore.MyMethodExtensions.Add``1(``0[]@,``0)">
+ <summary>
+ Add/Append and item to an array.
+ </summary>
+ <typeparam name="T"></typeparam>
+ <param name="arr"></param>
+ <param name="item"></param>
+</member>
+<member name="M:DataStore.MyMethodExtensions.Truncate(System.String,System.Int32)">
+ <summary>
+ Truncates a string to a max number of characters.
+ NB Can also use Strings.Left(str,int)
+ </summary>
+ <param name="value">The String to truncate</param>
+ <param name="maxLength">The maximum length of the string from the left.</param>
+ <returns></returns>
+</member>
+<member name="T:DataStore.DataStore.Data">
+ <summary>
+ Stored in Data table in SQL database. Data property stores POCO object data.
+ </summary>
+</member>
+<member name="P:DataStore.DataStore.Data.ID">
+ <summary>
+ Unique ID for a Document/Text
+ </summary>
+ <returns></returns>
+</member>
+<member name="M:DataStore.DataStore.Data.#ctor">
+ <summary>
+ Parameterless Constructor.
+ </summary>
+</member>
+<member name="M:DataStore.DataStore.Store.Add(System.Object)">
+ <summary>
+  AddObject method to add a new record to the DataStore table
+ </summary>
+ <param name="arObject"></param>
+</member>
+<member name="M:DataStore.DataStore.Store.Delete``1(System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}})">
+ <summary>
+ Delete method
+ </summary>
+ <typeparam name="T"></typeparam>
+ <param name="whereClause"></param>
+</member>
+<member name="M:DataStore.DataStore.Store.Update``1(System.Object,System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}})">
+ <summary>
+ Update function to replace the JSON in the Data field with Newtonsoft serialization
+ NB Only operates where one record is returned from inner Get. I.e. You should aim to update only one Document.
+ </summary>
+ <typeparam name="t"></typeparam>
+ <param name="arObject"></param>
+ <param name="whereClause"></param>
+</member>
+<member name="M:DataStore.DataStore.Store.Upsert``1(System.Object,System.Linq.Expressions.Expression{System.Func{``0,System.Boolean}})">
+ <summary>
+ Upsert method to either update or insert a record in the DataStore table
+ </summary>
+ <typeparam name="T"></typeparam>
+ <param name="arObject"></param>
+ <param name="whereClause"></param>
+</member>
+<member name="M:DataStore.DataStore.DataStorePrototype.UpSert">
+ <summary>
+ Upserts the object in the DataStore
+ </summary>
+</member>
+</members>
+</doc>

@@ -1,0 +1,16 @@
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\obj\Debug\DataStore.Resources.resources
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\obj\Debug\DataStore.vbproj.GenerateResource.cache
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\obj\Debug\DataStore.vbproj.CoreCompileInputs.cache
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\bin\Debug\DataStore.dll
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\bin\Debug\DataStore.pdb
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\bin\Debug\DataStore.xml
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\bin\Debug\FactEngineForServices.dll
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\bin\Debug\Newtonsoft.Json.dll
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\bin\Debug\System.Reflection.DispatchProxy.dll
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\bin\Debug\FactEngineForServices.dll.config
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\bin\Debug\Newtonsoft.Json.xml
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\bin\Debug\System.Reflection.DispatchProxy.xml
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\obj\Debug\DataStore.vbproj.CopyComplete
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\obj\Debug\DataStore.dll
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\obj\Debug\DataStore.xml
+D:\00-FactEngine\01-Product\01-Products\DataStore\DataStore\DataStore\obj\Debug\DataStore.pdb
