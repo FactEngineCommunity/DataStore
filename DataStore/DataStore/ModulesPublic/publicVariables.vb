@@ -1,10 +1,6 @@
 ﻿Public Module publicVariables
 
-    Public Enum pcenumErrorType
-        Information
-        Warning
-        Critical
-    End Enum
+    Public pdbConnection As Object
 
 
 End Module

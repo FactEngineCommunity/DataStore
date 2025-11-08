@@ -27,6 +27,47 @@ DataStore
  Paramerless Constructor
  </summary>
 </member>
+<member name="P:DataStore.ORMQL.Recordset.ErrorReturned">
+ <summary>
+ True if an error was returned when creating the recordset. See ErrorString for error details.
+ </summary>
+ <returns></returns>
+</member>
+<member name="F:DataStore.ORMQL.Recordset.FEQLQuery">
+ <summary>
+ The original FEQL query if one was used. Appended by FactEngine.
+ </summary>
+</member>
+<member name="F:DataStore.ORMQL.Recordset.Query">
+ <summary>
+ The Actual Query ran against the database.
+ </summary>
+</member>
+<member name="F:DataStore.ORMQL.Recordset.IntermediateQuery">
+ <summary>
+ Query sent for processing, but that was translated to the Actual Query (Query member), to run Query against the database.
+ </summary>
+</member>
+<member name="F:DataStore.ORMQL.Recordset.NaturalLanguageQuery">
+ <summary>
+ If a Natural Language Query is converted to FactEngine Query Language query. Appended by FactEngine.
+ </summary>
+</member>
+<member name="F:DataStore.ORMQL.Recordset.StatementType">
+ <summary>
+ The type of statement made by the User. E.g. a DESCRIBEStatement.
+ </summary>
+</member>
+<member name="F:DataStore.ORMQL.Recordset.ModelElement">
+ <summary>
+ As used in a DESCRIBE Statement, is pushed back to the client to process.
+ </summary>
+</member>
+<member name="M:DataStore.ORMQL.Recordset.#ctor">
+ <summary>
+ Parameterless New
+ </summary>
+</member>
 <member name="M:DataStore.MyMethodExtensions.AppendRange(System.Array,System.Array)">
  <summary>
  Append to an array.
