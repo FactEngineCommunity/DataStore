@@ -1,10 +1,10 @@
-Imports DataStore
-Imports DataStore.ExampleModels
+Imports DataStore.DataStore
 Imports System
 Imports System.Collections.Generic
 Imports System.IO
+Imports System.Linq.Expressions
 
-Namespace DataStore.ConsoleDemo
+Namespace ConsoleDemo
 
     Module Program
 
@@ -15,7 +15,7 @@ Namespace DataStore.ConsoleDemo
             Dim databasePath As String = Path.Combine(Environment.CurrentDirectory, "DataStoreConsoleDemo.sqlite")
             Console.WriteLine($"Connecting to demo database at {databasePath} ...")
 
-            Dim store As New Store()
+            Dim store As New Store
             store.Connect(databasePath, 3)
 
             SeedSampleData(store)
@@ -34,17 +34,17 @@ Namespace DataStore.ConsoleDemo
             Console.WriteLine("Seeding customers and purchase orders ...")
 
             ' Clean up anything from previous runs so the demo is deterministic.
-            store.Delete(Of PurchaseOrder)(Function(po) po.OrderNumber.StartsWith(SampleOrderPrefix))
-            store.Delete(Of Customer)(Function(c) c.CustomerNumber.StartsWith(SampleCustomerPrefix))
+            store.Delete(Of ExampleModels.PurchaseOrder)(Function(po) po.OrderNumber.StartsWith(SampleOrderPrefix))
+            store.Delete(Of ExampleModels.Customer)(Function(c) c.CustomerNumber.StartsWith(SampleCustomerPrefix))
 
-            Dim customers As List(Of Customer) = SampleData.CreateCustomers()
+            Dim customers As List(Of ExampleModels.Customer) = SampleData.CreateCustomers()
             For Each customer In customers
-                store.Upsert(Of Customer)(customer, Function(c) c.CustomerNumber = customer.CustomerNumber)
+                store.Upsert(Of ExampleModels.Customer)(customer, Function(c) c.CustomerNumber = customer.CustomerNumber)
             Next
 
-            Dim orders As List(Of PurchaseOrder) = SampleData.CreateOrders(customers)
+            Dim orders As List(Of ExampleModels.PurchaseOrder) = SampleData.CreateOrders(customers)
             For Each order In orders
-                store.Upsert(Of PurchaseOrder)(order, Function(po) po.OrderNumber = order.OrderNumber)
+                store.Upsert(Of ExampleModels.PurchaseOrder)(order, Function(po) po.OrderNumber = order.OrderNumber)
             Next
 
             Console.WriteLine($"Seeded {customers.Count} customers and {orders.Count} orders.")
@@ -54,7 +54,7 @@ Namespace DataStore.ConsoleDemo
             Console.WriteLine()
             Console.WriteLine("Customers currently on file:")
 
-            Dim customers As List(Of Customer) = store.Get(Of Customer)()
+            Dim customers As List(Of ExampleModels.Customer) = store.Get(Of ExampleModels.Customer)()
             For Each customer In customers
                 Console.WriteLine($" - {customer.CustomerNumber}: {customer.Name} ({customer.Email})")
                 If customer.Addresses IsNot Nothing Then
@@ -69,7 +69,7 @@ Namespace DataStore.ConsoleDemo
             Console.WriteLine()
             Console.WriteLine("Open purchase orders:")
 
-            Dim openOrders As List(Of PurchaseOrder) = store.Get(Of PurchaseOrder)(Function(po) po.Status = OrderStatus.Open)
+            Dim openOrders As List(Of ExampleModels.PurchaseOrder) = store.Get(Of ExampleModels.PurchaseOrder)(Function(po) po.Status = ExampleModels.OrderStatus.Open)
             For Each order In openOrders
                 Console.WriteLine($" - {order.OrderNumber} for customer {order.CustomerNumber}: {order.Total:c}")
                 For Each line In order.Items
@@ -83,11 +83,18 @@ Namespace DataStore.ConsoleDemo
             Console.WriteLine("Joining customers with their recent orders:")
 
             Dim cutoff As DateTime = DateTime.Today.AddDays(-30)
-            Dim joined As List(Of Object()) = store.Get(Function(c As Customer, po As PurchaseOrder) c.CustomerNumber = po.CustomerNumber AndAlso po.PlacedOn >= cutoff)
+
+            Dim lWhereAll As Expression(Of Func(Of ExampleModels.Customer, ExampleModels.PurchaseOrder, Boolean)) =
+                Function(lcust, lpo) _
+                    lcust.CustomerNumber = lpo.CustomerNumber AndAlso
+                    lpo.PlacedOn >= cutoff
+
+
+            Dim joined As List(Of Object()) = store.Get(lWhereAll)
 
             For Each tuple In joined
-                Dim customer As Customer = DirectCast(tuple(0), Customer)
-                Dim order As PurchaseOrder = DirectCast(tuple(1), PurchaseOrder)
+                Dim customer As ExampleModels.Customer = DirectCast(tuple(0), ExampleModels.Customer)
+                Dim order As ExampleModels.PurchaseOrder = DirectCast(tuple(1), ExampleModels.PurchaseOrder)
                 Console.WriteLine($" - {customer.Name} placed order {order.OrderNumber} on {order.PlacedOn:d} totaling {order.Total:c}")
             Next
         End Sub
@@ -97,7 +104,7 @@ Namespace DataStore.ConsoleDemo
             Console.WriteLine("Updating a customer's preferred email address via Upsert ...")
 
             Dim targetId As String = SampleCustomerPrefix & "01"
-            Dim customer As Customer = store.Get(Of Customer)(Function(c) c.CustomerNumber = targetId).FirstOrDefault()
+            Dim customer As ExampleModels.Customer = store.Get(Of ExampleModels.Customer)(Function(c) c.CustomerNumber = targetId).FirstOrDefault()
 
             If customer Is Nothing Then
                 Console.WriteLine("   Customer not found; skipping update.")
@@ -105,9 +112,9 @@ Namespace DataStore.ConsoleDemo
             End If
 
             customer.Email = "alice.smith+demo@example.com"
-            store.Upsert(Of Customer)(customer, Function(c) c.CustomerNumber = targetId)
+            store.Upsert(Of ExampleModels.Customer)(customer, Function(c) c.CustomerNumber = targetId)
 
-            Dim updated As Customer = store.Get(Of Customer)(Function(c) c.CustomerNumber = targetId).First()
+            Dim updated As ExampleModels.Customer = store.Get(Of ExampleModels.Customer)(Function(c) c.CustomerNumber = targetId).First()
             Console.WriteLine($"   Updated email stored as {updated.Email}.")
         End Sub
 
@@ -116,11 +123,11 @@ Namespace DataStore.ConsoleDemo
             Console.WriteLine("Archiving completed orders older than 90 days ...")
 
             Dim cutoff As DateTime = DateTime.Today.AddDays(-90)
-            Dim archivedBefore As Integer = store.Get(Of PurchaseOrder)(Function(po) po.Status = OrderStatus.Completed AndAlso po.PlacedOn < cutoff).Count
+            Dim archivedBefore As Integer = store.Get(Of ExampleModels.PurchaseOrder)(Function(po) po.Status = ExampleModels.OrderStatus.Completed AndAlso po.PlacedOn < cutoff).Count
 
-            store.Delete(Of PurchaseOrder)(Function(po) po.Status = OrderStatus.Completed AndAlso po.PlacedOn < cutoff)
+            store.Delete(Of ExampleModels.PurchaseOrder)(Function(po) po.Status = ExampleModels.OrderStatus.Completed AndAlso po.PlacedOn < cutoff)
 
-            Dim archivedAfter As Integer = store.Get(Of PurchaseOrder)(Function(po) po.Status = OrderStatus.Completed AndAlso po.PlacedOn < cutoff).Count
+            Dim archivedAfter As Integer = store.Get(Of ExampleModels.PurchaseOrder)(Function(po) po.Status = ExampleModels.OrderStatus.Completed AndAlso po.PlacedOn < cutoff).Count
 
             Console.WriteLine($"   Removed {archivedBefore - archivedAfter} historical orders.")
         End Sub

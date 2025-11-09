@@ -2,7 +2,7 @@ Imports System
 Imports System.Reflection
 Imports System.Runtime.InteropServices
 
-<Assembly: AssemblyTitle("DataStore.ConsoleDemo")>
+<Assembly: AssemblyTitle("ConsoleDemo")>
 <Assembly: AssemblyDescription("Sample console that demonstrates the DataStore facade.")>
 <Assembly: AssemblyCompany("DataStore Samples")>
 <Assembly: AssemblyProduct("DataStore.ConsoleDemo")>

@@ -1,6 +1,7 @@
 ﻿Imports System.Data.SQLite
 Imports System.Linq.Expressions
 Imports Newtonsoft.Json
+Imports Microsoft.Data.SQLite
 Imports Newtonsoft.Json.Serialization
 Imports System.IO
 Imports System.Text.RegularExpressions
@@ -32,7 +33,7 @@ Namespace DataStore
             If Database.OpenDatabase(connectionString) Then
 
                 ' Ensure DataStore exists
-                Using conn As New SQLiteConnection(connectionString)
+                Using conn As New System.Data.SQLite.SQLiteConnection(connectionString)
                     conn.Open()
 
                     Dim exists As Boolean
@@ -336,7 +337,7 @@ Namespace DataStore
                         Case Is = 1
                             lsSQLQuery = "DELETE FROM DataStore WHERE ID = '" & asID & "'"
 
-            Case Else
+                        Case Else
 
                             Dim typeName As String = GetType(T).FullName
 
