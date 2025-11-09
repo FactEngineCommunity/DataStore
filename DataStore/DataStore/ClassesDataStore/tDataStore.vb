@@ -1,5 +1,6 @@
 ﻿Imports System.Data.SQLite
 Imports System.Linq.Expressions
+Imports System.Globalization
 Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Serialization
 Imports System.IO
@@ -711,75 +712,58 @@ Namespace DataStore
             ' Add handling for other types of expressions if needed
         End Sub
 
-        Private Sub AppendConvertCondition(binaryExpression As BinaryExpression, jsonWhereBuilder As StringBuilder)
-            Dim memberExpression = DirectCast(binaryExpression.Left, MemberExpression)
-            Dim memberName = memberExpression.Member.Name
-            Dim unaryExpression = DirectCast(binaryExpression.Right, UnaryExpression)
-
-
-            Dim constantValue As String
-            If TypeOf unaryExpression.Operand Is MemberExpression Then
-                Dim memberOperand = DirectCast(unaryExpression.Operand, MemberExpression)
-                Dim lambda = Expression.Lambda(memberOperand)
-                Dim compiled = lambda.Compile()
-                constantValue = compiled.DynamicInvoke().ToString
-            Else
-                Throw New InvalidOperationException("Unsupported operand type for conversion.")
+        Private Sub AppendConvertCondition(aBinaryExpression As BinaryExpression, aJsonWhereBuilder As StringBuilder)
+            Dim lrMemberExpression = TryCast(StripConvert(aBinaryExpression.Left), MemberExpression)
+            If lrMemberExpression Is Nothing Then
+                Throw New InvalidOperationException("Unsupported left operand for conversion comparison.")
             End If
+
+            Dim lsMemberName As String = lrMemberExpression.Member.Name
+            Dim loRightValue As Object = EvalToObject(aBinaryExpression.Right)
 
             Dim lsComparitor As String = "="
-            Select Case binaryExpression.NodeType
-                Case Is = ExpressionType.GreaterThan
+            Select Case aBinaryExpression.NodeType
+                Case ExpressionType.GreaterThan
                     lsComparitor = ">"
+                Case ExpressionType.GreaterThanOrEqual
+                    lsComparitor = ">="
+                Case ExpressionType.LessThan
+                    lsComparitor = "<"
+                Case ExpressionType.LessThanOrEqual
+                    lsComparitor = "<="
             End Select
 
-            jsonWhereBuilder.Append("json_extract(Data, '$.")
-            jsonWhereBuilder.Append(memberName)
-            jsonWhereBuilder.Append($"') {lsComparitor} '")
-            jsonWhereBuilder.Append(constantValue)
-            jsonWhereBuilder.Append("'")
+            Call AppendJsonComparison(lsMemberName, loRightValue, lsComparitor, aJsonWhereBuilder)
         End Sub
 
-        Private Sub AppendMemberAccessCondition(binaryExpression As BinaryExpression, jsonWhereBuilder As StringBuilder)
-            Dim memberExpression = DirectCast(binaryExpression.Left, MemberExpression)
-            Dim memberName = memberExpression.Member.Name
-            Dim constExpr = DirectCast(binaryExpression.Right, ConstantExpression)
-            Dim constantValue = constExpr.Value
-
-            jsonWhereBuilder.Append("json_extract(Data, '$.")
-            jsonWhereBuilder.Append(memberName)
-            jsonWhereBuilder.Append("') = ")
-
-            If TypeOf constantValue Is Boolean Then
-                jsonWhereBuilder.Append(If(CBool(constantValue), "1", "0"))
-            Else
-                jsonWhereBuilder.Append("'"c)
-                jsonWhereBuilder.Append(constantValue.ToString())
-                jsonWhereBuilder.Append("'"c)
+        Private Sub AppendMemberAccessCondition(aBinaryExpression As BinaryExpression, aJsonWhereBuilder As StringBuilder)
+            Dim lrMemberExpression = TryCast(StripConvert(aBinaryExpression.Left), MemberExpression)
+            If lrMemberExpression Is Nothing Then
+                Throw New InvalidOperationException("Unsupported left operand for member access comparison.")
             End If
+
+            Dim lsMemberName As String = lrMemberExpression.Member.Name
+            Dim loRightValue As Object = EvalToObject(aBinaryExpression.Right)
+
+            Call AppendJsonComparison(lsMemberName, loRightValue, "=", aJsonWhereBuilder)
         End Sub
 
-        Private Sub AppendMemberToMemberCondition(binaryExpression As BinaryExpression, jsonWhereBuilder As StringBuilder)
+        Private Sub AppendMemberToMemberCondition(aBinaryExpression As BinaryExpression, aJsonWhereBuilder As StringBuilder)
             ' Extract the Convert expressions and retrieve the underlying MemberExpressions
             Try
 
                 ' Handle the left expression (as a MemberExpression, not a closure)
-                Dim leftConvertExpression = DirectCast(binaryExpression.Left, UnaryExpression)
-                Dim leftMemberExpression = DirectCast(leftConvertExpression.Operand, MemberExpression)
-                Dim leftMemberName As String = leftMemberExpression.Member.Name ' The actual member name (like UserId)
+                Dim lrLeftMemberExpression = TryCast(StripConvert(aBinaryExpression.Left), MemberExpression)
+                If lrLeftMemberExpression Is Nothing Then
+                    Throw New InvalidOperationException("Unsupported left operand for member-to-member comparison.")
+                End If
 
-                ' Handle the right expression (which is a closure containing the constant value)
-                Dim rightConvertExpression = DirectCast(binaryExpression.Right, UnaryExpression)
-                Dim rightMemberExpression = DirectCast(rightConvertExpression.Operand, MemberExpression)
-                Dim closureConstant = DirectCast(DirectCast(rightMemberExpression.Expression, ConstantExpression).Value, Object)
-                Dim rightLiteralValue = closureConstant.GetType().GetField(rightMemberExpression.Member.Name).GetValue(closureConstant).ToString()
+                Dim lsLeftMemberName As String = lrLeftMemberExpression.Member.Name ' The actual member name (like UserId)
+
+                Dim loRightLiteralValue As Object = EvalToObject(aBinaryExpression.Right)
 
                 ' Build the JSON condition comparing the left member to the right literal value
-                jsonWhereBuilder.Append("json_extract(Data, '$.")
-                jsonWhereBuilder.Append(leftMemberName) ' This is the left side member (e.g., UserId)
-                jsonWhereBuilder.Append("') = '")
-                jsonWhereBuilder.Append(rightLiteralValue) ' This is the right side literal value (e.g., lsUserId from the closure)
-                jsonWhereBuilder.Append("'")
+                Call AppendJsonComparison(lsLeftMemberName, loRightLiteralValue, "=", aJsonWhereBuilder)
 
             Catch ex As Exception
                 Dim lsMessage As String
@@ -791,32 +775,22 @@ Namespace DataStore
             End Try
         End Sub
 
-        Private Sub AppendMemberToConstantCondition(binaryExpression As BinaryExpression, jsonWhereBuilder As StringBuilder)
+        Private Sub AppendMemberToConstantCondition(aBinaryExpression As BinaryExpression, aJsonWhereBuilder As StringBuilder)
             ' Extract the Convert expressions and retrieve the underlying MemberExpressions
             Try
 
                 ' Handle the left expression (as a MemberExpression, not a closure)
-                Dim leftConvertExpression = DirectCast(binaryExpression.Left, UnaryExpression)
-                Dim leftMemberExpression = DirectCast(leftConvertExpression.Operand, MemberExpression)
-                Dim leftMemberName As String = leftMemberExpression.Member.Name ' The actual member name (like UserId)
+                Dim lrLeftMemberExpression = TryCast(StripConvert(aBinaryExpression.Left), MemberExpression)
+                If lrLeftMemberExpression Is Nothing Then
+                    Throw New InvalidOperationException("Unsupported left operand for member-to-constant comparison.")
+                End If
 
-                Dim constantValue = DirectCast(DirectCast(binaryExpression.Right, ConstantExpression).Value, String)
+                Dim lsLeftMemberName As String = lrLeftMemberExpression.Member.Name ' The actual member name (like UserId)
 
+                Dim loConstantValue As Object = EvalToObject(aBinaryExpression.Right)
 
                 ' Build the JSON condition comparing the left member to the right literal value
-                jsonWhereBuilder.Append("json_extract(Data, '$.")
-                jsonWhereBuilder.Append(leftMemberName) ' This is the left side member (e.g., UserId)
-
-                Select Case constantValue
-                    Case Is = Nothing
-                        jsonWhereBuilder.Append(constantValue)
-                        jsonWhereBuilder.Append("') IS NULL")
-                    Case Else
-                        jsonWhereBuilder.Append(constantValue)
-                        jsonWhereBuilder.Append("') = '")
-                        jsonWhereBuilder.Append(constantValue) ' This is the right side literal value (e.g., lsUserId from the closure)
-                        jsonWhereBuilder.Append("'")
-                End Select
+                Call AppendJsonComparison(lsLeftMemberName, loConstantValue, "=", aJsonWhereBuilder)
 
             Catch ex As Exception
                 Dim lsMessage As String
@@ -931,6 +905,78 @@ Namespace DataStore
         End Sub
 
         ' --- helpers ---
+
+        Private Sub AppendJsonComparison(asMemberName As String, aoValue As Object, asComparitor As String, aJsonWhereBuilder As StringBuilder)
+            Dim lsComparitorToUse As String = If(String.IsNullOrWhiteSpace(asComparitor), "=", asComparitor)
+
+            aJsonWhereBuilder.Append("json_extract(Data, '$.")
+            aJsonWhereBuilder.Append(asMemberName)
+            aJsonWhereBuilder.Append("') ")
+
+            If aoValue Is Nothing OrElse aoValue Is DBNull.Value Then
+                Select Case lsComparitorToUse
+                    Case "<>", "!="
+                        aJsonWhereBuilder.Append("IS NOT NULL")
+                    Case Else
+                        aJsonWhereBuilder.Append("IS NULL")
+                End Select
+                Return
+            End If
+
+            aJsonWhereBuilder.Append(lsComparitorToUse)
+            aJsonWhereBuilder.Append(" ")
+            aJsonWhereBuilder.Append(BuildSqlLiteralFromValue(aoValue))
+        End Sub
+
+        Private Shared Function BuildSqlLiteralFromValue(aoValue As Object) As String
+            If aoValue Is Nothing OrElse aoValue Is DBNull.Value Then
+                Return "NULL"
+            End If
+
+            If TypeOf aoValue Is Boolean Then
+                Return If(CBool(aoValue), "1", "0")
+            End If
+
+            Dim ltValueType As Type = aoValue.GetType()
+
+            If ltValueType.IsEnum Then
+                Return Convert.ToInt64(aoValue, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture)
+            End If
+
+            Select Case Type.GetTypeCode(ltValueType)
+                Case TypeCode.SByte, TypeCode.Byte, TypeCode.Int16, TypeCode.UInt16,
+                     TypeCode.Int32, TypeCode.UInt32, TypeCode.Int64, TypeCode.UInt64
+                    Return Convert.ToInt64(aoValue, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture)
+
+                Case TypeCode.Single, TypeCode.Double, TypeCode.Decimal
+                    Return Convert.ToString(aoValue, CultureInfo.InvariantCulture)
+
+                Case TypeCode.DateTime
+                    Dim ldDateTime As DateTime = DirectCast(aoValue, DateTime)
+                    Dim lsIsoDateTime As String = ldDateTime.ToString("o", CultureInfo.InvariantCulture)
+                    Return QuoteSqlLiteral(lsIsoDateTime)
+
+                Case TypeCode.String, TypeCode.Char
+                    Return QuoteSqlLiteral(aoValue.ToString())
+            End Select
+
+            If TypeOf aoValue Is DateTimeOffset Then
+                Dim ldDateTimeOffset As DateTimeOffset = DirectCast(aoValue, DateTimeOffset)
+                Dim lsIsoDateTimeOffset As String = ldDateTimeOffset.ToString("o", CultureInfo.InvariantCulture)
+                Return QuoteSqlLiteral(lsIsoDateTimeOffset)
+            End If
+
+            If TypeOf aoValue Is Guid Then
+                Return QuoteSqlLiteral(DirectCast(aoValue, Guid).ToString())
+            End If
+
+            Return QuoteSqlLiteral(JsonConvert.SerializeObject(aoValue))
+        End Function
+
+        Private Shared Function QuoteSqlLiteral(asValue As String) As String
+            Dim lsValue As String = If(asValue, String.Empty)
+            Return "'" & lsValue.Replace("'", "''") & "'"
+        End Function
 
         Private Shared Function StripConvert(e As Expression) As Expression
             Dim u = TryCast(e, UnaryExpression)
