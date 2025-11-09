@@ -105,6 +105,7 @@
     <Compile Include="ClassesDataStore\tDataStore.vb" />
     <Compile Include="ClassesDataStore\tDataStorePrototype.vb" />
     <Compile Include="ClassesDataStore\tSQLExpressionVisitor.vb" />
+    <Compile Include="ExampleModels\CommerceEntities.vb" />
     <Compile Include="ModulesPublic\publicConstants.vb" />
     <Compile Include="ModulesPublic\publicVariables.vb" />
     <Compile Include="ModulesTable\tableDataStore.vb" />
