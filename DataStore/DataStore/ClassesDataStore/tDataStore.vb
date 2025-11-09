@@ -737,35 +737,10 @@ Namespace DataStore
             Call AppendJsonComparison(lsMemberName, loRightValue, lsComparitor, aJsonWhereBuilder)
         End Sub
 
-<<<<<<< HEAD
-        Private Sub AppendMemberAccessCondition(binaryExpression As BinaryExpression, jsonWhereBuilder As StringBuilder)
-
-            Dim left = binaryExpression.Left
-            If TypeOf left Is UnaryExpression Then
-                left = DirectCast(left, UnaryExpression).Operand
-            End If
-            Dim memberExpression = DirectCast(left, MemberExpression)
-
-            Dim memberName = memberExpression.Member.Name
-            Dim constExpr = DirectCast(binaryExpression.Right, ConstantExpression)
-            Dim constantValue = constExpr.Value
-
-            jsonWhereBuilder.Append("json_extract(Data, '$.")
-            jsonWhereBuilder.Append(memberName)
-            jsonWhereBuilder.Append("') = ")
-
-            If TypeOf constantValue Is Boolean Then
-                jsonWhereBuilder.Append(If(CBool(constantValue), "1", "0"))
-            Else
-                jsonWhereBuilder.Append("'"c)
-                jsonWhereBuilder.Append(constantValue.ToString())
-                jsonWhereBuilder.Append("'"c)
-=======
         Private Sub AppendMemberAccessCondition(aBinaryExpression As BinaryExpression, aJsonWhereBuilder As StringBuilder)
             Dim lrMemberExpression = TryCast(StripConvert(aBinaryExpression.Left), MemberExpression)
             If lrMemberExpression Is Nothing Then
                 Throw New InvalidOperationException("Unsupported left operand for member access comparison.")
->>>>>>> 02e764d2b1e9c94a0265efecf6a521714ee0b7e7
             End If
 
             Dim lsMemberName As String = lrMemberExpression.Member.Name
