@@ -646,13 +646,15 @@ Namespace DataStore
             Return jsonWhereBuilder.ToString()
         End Function
 
-        Private Function ExtractConditions(expression As Expression) As IEnumerable(Of BinaryExpression)
-            Dim conditions As New List(Of BinaryExpression)
+        Private Function ExtractConditions(expression As Expression) As IEnumerable(Of Expression)
+            Dim conditions As New List(Of Expression)
             CollectConditions(expression, conditions)
             Return conditions
         End Function
 
-        Private Sub CollectConditions(expression As Expression, conditions As List(Of BinaryExpression))
+        Private Sub CollectConditions(expression As Expression, conditions As List(Of Expression))
+            If expression Is Nothing Then Return
+
             If TypeOf expression Is BinaryExpression Then
                 Dim binaryExpression = DirectCast(expression, BinaryExpression)
                 If binaryExpression.NodeType = ExpressionType.And OrElse binaryExpression.NodeType = ExpressionType.AndAlso Then
@@ -660,22 +662,51 @@ Namespace DataStore
                     CollectConditions(binaryExpression.Right, conditions)
                 ElseIf binaryExpression.NodeType = ExpressionType.Equal OrElse binaryExpression.NodeType = ExpressionType.GreaterThan Then
                     conditions.Add(binaryExpression)
+                ElseIf StripConvert(binaryExpression.Left).NodeType = ExpressionType.Call Then
+                    conditions.Add(binaryExpression)
                 End If
+            ElseIf TypeOf expression Is MethodCallExpression Then
+                conditions.Add(expression)
+            ElseIf TypeOf expression Is UnaryExpression Then
+                CollectConditions(DirectCast(expression, UnaryExpression).Operand, conditions)
             End If
             ' Add handling for other types of expressions if needed
         End Sub
 
-        Private Sub AppendCondition(binaryExpression As BinaryExpression, jsonWhereBuilder As StringBuilder)
-            If binaryExpression.Left.NodeType = ExpressionType.MemberAccess AndAlso binaryExpression.Right.NodeType = ExpressionType.Constant Then
-                AppendMemberAccessCondition(binaryExpression, jsonWhereBuilder)
-            ElseIf binaryExpression.Left.NodeType = ExpressionType.Call AndAlso binaryExpression.Right.NodeType = ExpressionType.Constant Then
-                AppendMethodCallCondition(binaryExpression, jsonWhereBuilder)
-            ElseIf binaryExpression.Left.NodeType = ExpressionType.MemberAccess AndAlso binaryExpression.Right.NodeType = ExpressionType.Convert Then
-                AppendConvertCondition(binaryExpression, jsonWhereBuilder)
-            ElseIf binaryExpression.Left.NodeType = ExpressionType.Convert AndAlso binaryExpression.Right.NodeType = ExpressionType.Convert Then
-                AppendMemberToMemberCondition(binaryExpression, jsonWhereBuilder)
-            ElseIf binaryExpression.Left.NodeType = ExpressionType.Convert AndAlso binaryExpression.Right.NodeType = ExpressionType.Constant Then
-                AppendMemberToConstantCondition(binaryExpression, jsonWhereBuilder)
+        Private Sub AppendCondition(condition As Expression, jsonWhereBuilder As StringBuilder)
+            Dim binaryExpression = TryCast(condition, BinaryExpression)
+            If binaryExpression IsNot Nothing Then
+                Dim left = StripConvert(binaryExpression.Left)
+                Dim right = StripConvert(binaryExpression.Right)
+
+                If left.NodeType = ExpressionType.MemberAccess AndAlso right.NodeType = ExpressionType.Constant Then
+                    AppendMemberAccessCondition(binaryExpression, jsonWhereBuilder)
+                ElseIf left.NodeType = ExpressionType.Call Then
+                    Dim methodCall = DirectCast(left, MethodCallExpression)
+                    Dim constRight = TryCast(right, ConstantExpression)
+                    If constRight IsNot Nothing Then
+                        If TypeOf constRight.Value Is Boolean Then
+                            If Not CBool(constRight.Value) Then Return
+                        ElseIf methodCall.Method.Name = "CompareString" Then
+                            If Not Object.Equals(constRight.Value, 0) Then Return
+                        End If
+                    ElseIf methodCall.Method.Name = "CompareString" Then
+                        Return
+                    End If
+                    AppendMethodCallCondition(methodCall, jsonWhereBuilder)
+                ElseIf left.NodeType = ExpressionType.MemberAccess AndAlso binaryExpression.Right.NodeType = ExpressionType.Convert Then
+                    AppendConvertCondition(binaryExpression, jsonWhereBuilder)
+                ElseIf binaryExpression.Left.NodeType = ExpressionType.Convert AndAlso binaryExpression.Right.NodeType = ExpressionType.Convert Then
+                    AppendMemberToMemberCondition(binaryExpression, jsonWhereBuilder)
+                ElseIf binaryExpression.Left.NodeType = ExpressionType.Convert AndAlso binaryExpression.Right.NodeType = ExpressionType.Constant Then
+                    AppendMemberToConstantCondition(binaryExpression, jsonWhereBuilder)
+                End If
+                Return
+            End If
+
+            Dim callExpression = TryCast(condition, MethodCallExpression)
+            If callExpression IsNot Nothing Then
+                AppendMethodCallCondition(callExpression, jsonWhereBuilder)
             End If
             ' Add handling for other types of expressions if needed
         End Sub
@@ -839,38 +870,54 @@ Namespace DataStore
 
 #Region "NewAppendMethodCallCondition"
 
-        Private Sub AppendMethodCallCondition(binaryExpression As BinaryExpression, jsonWhereBuilder As StringBuilder)
+        Private Sub AppendMethodCallCondition(methodCallExpression As MethodCallExpression, jsonWhereBuilder As StringBuilder)
 
-            Dim callExpr = DirectCast(binaryExpression.Left, MethodCallExpression)
+            Dim target As MemberExpression = TryCast(StripConvert(methodCallExpression.Object), MemberExpression)
+            Dim argumentIndex As Integer = 0
 
-            ' Find the target member: either obj.Method(...) or Method(target, ...)
-            Dim target As MemberExpression = TryCast(StripConvert(callExpr.Object), MemberExpression)
-            If target Is Nothing AndAlso callExpr.Arguments.Count > 0 Then
-                target = TryCast(StripConvert(callExpr.Arguments(0)), MemberExpression)
+            If target Is Nothing AndAlso methodCallExpression.Arguments.Count > 0 Then
+                target = TryCast(StripConvert(methodCallExpression.Arguments(0)), MemberExpression)
+                If target IsNot Nothing Then
+                    argumentIndex = 1
+                End If
             End If
+
             If target Is Nothing Then Exit Sub
 
             Dim leftName As String = GetTopLevelMemberName(target)
 
-            Dim op As String
-            Dim rhs As Object
+            Dim op As String = Nothing
+            Dim rhs As String = Nothing
 
-            Select Case callExpr.Method.Name
-                Case "Equals", "CompareString"
-                    rhs = EvalToObject(callExpr.Arguments(If(callExpr.Object Is Nothing, 1, 0)))
-                    op = "="
+            Select Case methodCallExpression.Method.Name
+                Case "Equals"
+                    If methodCallExpression.Arguments.Count > argumentIndex Then
+                        rhs = ToInvariantString(EvalToObject(methodCallExpression.Arguments(argumentIndex)))
+                        op = "="
+                    End If
                 Case "Contains"
-                    rhs = "%" & ToInvariantString(EvalToObject(callExpr.Arguments(0))) & "%"
-                    op = "LIKE"
+                    If methodCallExpression.Arguments.Count > argumentIndex Then
+                        rhs = "%" & ToInvariantString(EvalToObject(methodCallExpression.Arguments(argumentIndex))) & "%"
+                        op = "LIKE"
+                    End If
                 Case "StartsWith"
-                    rhs = ToInvariantString(EvalToObject(callExpr.Arguments(0))) & "%"
-                    op = "LIKE"
+                    If methodCallExpression.Arguments.Count > argumentIndex Then
+                        rhs = ToInvariantString(EvalToObject(methodCallExpression.Arguments(argumentIndex))) & "%"
+                        op = "LIKE"
+                    End If
                 Case "EndsWith"
-                    rhs = "%" & ToInvariantString(EvalToObject(callExpr.Arguments(0)))
-                    op = "LIKE"
-                Case Else
-                    Exit Sub
+                    If methodCallExpression.Arguments.Count > argumentIndex Then
+                        rhs = "%" & ToInvariantString(EvalToObject(methodCallExpression.Arguments(argumentIndex)))
+                        op = "LIKE"
+                    End If
+                Case "CompareString"
+                    If methodCallExpression.Arguments.Count > argumentIndex Then
+                        rhs = ToInvariantString(EvalToObject(methodCallExpression.Arguments(argumentIndex)))
+                        op = "="
+                    End If
             End Select
+
+            If op Is Nothing OrElse rhs Is Nothing Then Exit Sub
 
             jsonWhereBuilder.
                     Append("json_extract(Data, '$.").
