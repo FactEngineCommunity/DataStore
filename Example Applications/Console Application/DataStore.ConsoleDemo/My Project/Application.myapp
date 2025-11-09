@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MyApplication xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <MySubMain>false</MySubMain>
+  <MainForm>Form1</MainForm>
+  <SingleInstance>false</SingleInstance>
+  <ShutdownMode>AfterMainFormCloses</ShutdownMode>
+  <EnableVisualStyles>true</EnableVisualStyles>
+  <SaveMySettingsOnExit>true</SaveMySettingsOnExit>
+  <AuthenticationMode>Windows</AuthenticationMode>
+</MyApplication>
