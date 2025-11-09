@@ -21,12 +21,14 @@ Namespace ConsoleDemo
             SeedSampleData(store)
             DisplayStoredCustomers(store)
             DisplayOpenOrders(store)
-            ShowJoinedView(store)
-            UpdateCustomerEmail(store)
-            ArchiveOldOrders(store)
+            'ShowJoinedView(store)
+            'UpdateCustomerEmail(store)
+            'ArchiveOldOrders(store)
 
             Console.WriteLine()
             Console.WriteLine("Demo complete. You can inspect the SQLite file to explore the stored JSON payloads.")
+            Console.WriteLine("Press [Enter] to exit...")
+            Console.ReadLine()
         End Sub
 
         Private Sub SeedSampleData(store As Store)

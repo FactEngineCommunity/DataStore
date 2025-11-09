@@ -1,7 +1,7 @@
 ﻿Imports System.Data.SQLite
 Imports System.Linq.Expressions
 Imports Newtonsoft.Json
-Imports Microsoft.Data.SQLite
+Imports FactEngineForServices
 Imports Newtonsoft.Json.Serialization
 Imports System.IO
 Imports System.Text.RegularExpressions
@@ -341,7 +341,7 @@ Namespace DataStore
 
                             Dim typeName As String = GetType(T).FullName
 
-                            lsSQLQuery = $"DELETE FROM DataStore WHERE json_extract(Data, '$.$type') = '{typeName}, {Assembly.GetExecutingAssembly().GetName().Name}'"
+                            lsSQLQuery = $"DELETE FROM DataStore WHERE json_extract(Data, '$.$type') = '{typeName},%'" '{Assembly.GetExecutingAssembly().GetName().Name}'"
                             lsSQLQuery &= " AND " & Me.GenerateJsonWhereClause(whereClause)
 
                     End Select
@@ -587,13 +587,13 @@ Namespace DataStore
 
                 Dim lsSQLQuery As String
                 If whereClause Is Nothing Then
-                    lsSQLQuery = "SELECT ID, Data FROM DataStore WHERE json_extract(Data, '$.$type') = '" & typeName & ", " & Assembly.GetExecutingAssembly().GetName().Name & "'"
+                    lsSQLQuery = $"SELECT ID, Data FROM DataStore WHERE json_extract(Data, '$.$type') LIKE '{typeName},%'" ' & Assembly.GetExecutingAssembly().GetName().Name & "'"
                 Else
                     If GetType(T) = GetType(DataStore.Data) Then
                         lsSQLQuery = $"SELECT ID, Data FROM DataStore"
                         lsSQLQuery &= $" WHERE {Me.GenerateJsonWhereClause(whereClause)}"
                     Else
-                        lsSQLQuery = "SELECT ID, Data FROM DataStore WHERE json_extract(Data, '$.$type') = '" & typeName & ", " & Assembly.GetExecutingAssembly().GetName().Name & "'"
+                        lsSQLQuery = $"SELECT ID, Data FROM DataStore WHERE json_extract(Data, '$.$type') LIKE '{typeName},%'" ' & Assembly.GetExecutingAssembly().GetName().Name & "'"
                         lsSQLQuery &= " AND " & Me.GenerateJsonWhereClause(whereClause)
                     End If
                 End If
@@ -742,7 +742,13 @@ Namespace DataStore
         End Sub
 
         Private Sub AppendMemberAccessCondition(binaryExpression As BinaryExpression, jsonWhereBuilder As StringBuilder)
-            Dim memberExpression = DirectCast(binaryExpression.Left, MemberExpression)
+
+            Dim left = binaryExpression.Left
+            If TypeOf left Is UnaryExpression Then
+                left = DirectCast(left, UnaryExpression).Operand
+            End If
+            Dim memberExpression = DirectCast(left, MemberExpression)
+
             Dim memberName = memberExpression.Member.Name
             Dim constExpr = DirectCast(binaryExpression.Right, ConstantExpression)
             Dim constantValue = constExpr.Value

@@ -20,7 +20,7 @@ Public Module tableDataStore
             lsSQLQuery &= " ,'" & Trim(Replace(arData.Notes, "'", "`")) & "'"
             lsSQLQuery &= ")"
 
-            Dim lrRecordset As ORMQL.Recordset = pdbConnection.Execute(lsSQLQuery)
+            Dim lrRecordset As FactEngineForServices.ORMQL.Recordset = CType(pdbConnection, FactEngineForServices.FactEngine.SQLiteConnection).GONonQuery(lsSQLQuery)
 
             If lrRecordset.ErrorReturned Then
                 Throw New Exception(lrRecordset.ErrorString)

@@ -38,6 +38,10 @@
     <Reference Include="DataStore">
       <HintPath>..\Dependencies\DataStore.dll</HintPath>
     </Reference>
+    <Reference Include="FactEngineForServices, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Dependencies\FactEngineForServices.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />

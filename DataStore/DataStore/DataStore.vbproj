@@ -82,7 +82,6 @@
   <ItemGroup>
     <Compile Include="ClassesDatabase\tRecordsetProxy.vb" />
     <Compile Include="ClassesDataStore\tForeignKeyRelationshipAttribute.vb" />
-    <Compile Include="ClassesORMQL\tORMQLRecordset.vb" />
     <Compile Include="ModulesPublic\MyMethodExtensions.vb" />
     <Compile Include="ModulesPublic\publicDatabase.vb" />
     <Compile Include="ModulesPublic\publicFunctions.vb" />
@@ -132,6 +131,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ClassesDataStore\DataStoreCREATETABLEStatement.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ClassesORMQL\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>
