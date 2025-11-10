@@ -662,7 +662,12 @@ Namespace DataStore
                 If binaryExpression.NodeType = ExpressionType.And OrElse binaryExpression.NodeType = ExpressionType.AndAlso Then
                     CollectConditions(binaryExpression.Left, conditions)
                     CollectConditions(binaryExpression.Right, conditions)
-                ElseIf binaryExpression.NodeType = ExpressionType.Equal OrElse binaryExpression.NodeType = ExpressionType.GreaterThan Then
+                ElseIf binaryExpression.NodeType = ExpressionType.Equal _
+                    OrElse binaryExpression.NodeType = ExpressionType.NotEqual _
+                    OrElse binaryExpression.NodeType = ExpressionType.GreaterThan _
+                    OrElse binaryExpression.NodeType = ExpressionType.GreaterThanOrEqual _
+                    OrElse binaryExpression.NodeType = ExpressionType.LessThan _
+                    OrElse binaryExpression.NodeType = ExpressionType.LessThanOrEqual Then
                     conditions.Add(binaryExpression)
                 ElseIf StripConvert(binaryExpression.Left).NodeType = ExpressionType.Call Then
                     conditions.Add(binaryExpression)
