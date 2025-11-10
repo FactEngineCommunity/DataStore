@@ -705,6 +705,8 @@ Namespace DataStore
                     AppendConvertCondition(binaryExpression, jsonWhereBuilder)
                 ElseIf binaryExpression.Left.NodeType = ExpressionType.Convert AndAlso binaryExpression.Right.NodeType = ExpressionType.Convert Then
                     AppendMemberToMemberCondition(binaryExpression, jsonWhereBuilder)
+                ElseIf binaryExpression.Left.NodeType = ExpressionType.Convert AndAlso binaryExpression.Right.NodeType = ExpressionType.MemberAccess Then
+                    AppendMemberToMemberCondition(binaryExpression, jsonWhereBuilder)
                 ElseIf binaryExpression.Left.NodeType = ExpressionType.Convert AndAlso binaryExpression.Right.NodeType = ExpressionType.Constant Then
                     AppendMemberToConstantCondition(binaryExpression, jsonWhereBuilder)
                 End If
