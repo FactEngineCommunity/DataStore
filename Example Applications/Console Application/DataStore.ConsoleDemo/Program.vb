@@ -21,9 +21,10 @@ Namespace ConsoleDemo
             SeedSampleData(store)
             DisplayStoredCustomers(store)
             DisplayOpenOrders(store)
-            'ShowJoinedView(store)
-            'UpdateCustomerEmail(store)
-            'ArchiveOldOrders(store)
+            ShowJoinedView(store)
+            UpdateCustomerEmail(store)
+            DisplayStoredCustomers(store)
+            ArchiveOldOrders(store)
 
             Console.WriteLine()
             Console.WriteLine("Demo complete. You can inspect the SQLite file to explore the stored JSON payloads.")
@@ -111,6 +112,8 @@ Namespace ConsoleDemo
             If customer Is Nothing Then
                 Console.WriteLine("   Customer not found; skipping update.")
                 Return
+            Else
+                Console.WriteLine($"   Original email stored as {customer.Email}.")
             End If
 
             customer.Email = "alice.smith+demo@example.com"
@@ -125,11 +128,11 @@ Namespace ConsoleDemo
             Console.WriteLine("Archiving completed orders older than 90 days ...")
 
             Dim cutoff As DateTime = DateTime.Today.AddDays(-90)
-            Dim archivedBefore As Integer = store.Get(Of ExampleModels.PurchaseOrder)(Function(po) po.Status = ExampleModels.OrderStatus.Completed AndAlso po.PlacedOn < cutoff).Count
+            Dim archivedBefore As Integer = store.Get(Of ExampleModels.PurchaseOrder)(Function(po) po.Status = ExampleModels.OrderStatus.Completed And po.PlacedOn < cutoff).Count
 
             store.Delete(Of ExampleModels.PurchaseOrder)(Function(po) po.Status = ExampleModels.OrderStatus.Completed AndAlso po.PlacedOn < cutoff)
 
-            Dim archivedAfter As Integer = store.Get(Of ExampleModels.PurchaseOrder)(Function(po) po.Status = ExampleModels.OrderStatus.Completed AndAlso po.PlacedOn < cutoff).Count
+            Dim archivedAfter As Integer = store.Get(Of ExampleModels.PurchaseOrder)(Function(po) po.Status = ExampleModels.OrderStatus.Completed And po.PlacedOn < cutoff).Count
 
             Console.WriteLine($"   Removed {archivedBefore - archivedAfter} historical orders.")
         End Sub

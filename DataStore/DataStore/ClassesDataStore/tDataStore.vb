@@ -347,7 +347,7 @@ Namespace DataStore
 
                     End Select
 
-                    Call pdbConnection.Execute(lsSQLQuery)
+                    Call pdbConnection.GoNonQuery(lsSQLQuery)
                 End If
 
             Catch ex As Exception
@@ -1231,7 +1231,7 @@ Namespace DataStore
                     Dim lsSQLQuery As String = "UPDATE DataStore SET Data = '" & jsonData & "' WHERE ID = '" & asID & "'"
 
                     ' Execute the update query
-                    Dim lrRecordset As ORMQL.Recordset = pdbConnection.Execute(lsSQLQuery)
+                    Dim lrRecordset As ORMQL.Recordset = pdbConnection.GoNonQuery(lsSQLQuery)
 
                     If lrRecordset.ErrorReturned Then
                         Throw New Exception(lrRecordset.ErrorString)
@@ -1281,7 +1281,7 @@ Namespace DataStore
                 If dataList.Count >= 1 AndAlso asID IsNot Nothing Then
                     ' If the record exists, update it in the database
                     Dim lsSQLQuery As String = "UPDATE DataStore SET Data = '" & jsonData & "' WHERE ID = '" & asID & "'"
-                    Dim lrRecordset As ORMQL.Recordset = pdbConnection.Execute(lsSQLQuery)
+                    Dim lrRecordset As ORMQL.Recordset = pdbConnection.GoNonQuery(lsSQLQuery)
 
                     If lrRecordset.ErrorReturned Then
                         If lrRecordset.ErrorString.Contains("unique") Then
