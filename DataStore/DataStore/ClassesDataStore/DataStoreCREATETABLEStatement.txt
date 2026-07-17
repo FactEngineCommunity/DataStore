@@ -1,0 +1,11 @@
+﻿CREATE TABLE DataStore (
+	ID TEXT PRIMARY KEY,
+	Data TEXT,
+	DataClass TEXT,
+	EntryDate DATETIME,
+	Source TEXT,
+	Author TEXT,
+	Tags TEXT,
+	Location TEXT,
+	Notes TEXT,
+	UNIQUE (Data) ON CONFLICT FAIL)

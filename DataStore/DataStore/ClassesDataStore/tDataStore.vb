@@ -15,18 +15,38 @@ Imports System.Threading
 Namespace DataStore
     Public Class [Store]
 
+        ''' <summary>
+        ''' Connects to the SQLite Database
+        ''' </summary>
+        ''' <param name="asDatabaseConnectionString"></param>
         Public Sub Connect(ByVal asDatabaseConnectionString As String)
 
-            Call Database.OpenDatabase(asDatabaseConnectionString)
+            Try
+                Call Database.OpenDatabase(asDatabaseConnectionString)
+
+            Catch ex As Exception
+                Dim lsMessage As String
+                Dim mb As MethodBase = MethodInfo.GetCurrentMethod()
+
+                lsMessage = "Error: " & mb.ReflectedType.Name & "." & mb.Name
+                lsMessage &= vbCrLf & vbCrLf & ex.Message
+                Throw New Exception(lsMessage)
+            End Try
+
 
         End Sub
 
-        Public Sub Connect(ByVal asDatabaseFilePath As String, ByVal aiVersion As Single)
+        ''' <summary>
+        ''' Connects to the database and creates the DataStore table if it does not exist.
+        ''' </summary>
+        ''' <param name="asDatabaseFilePath"></param>
+        ''' <param name="aiSQLiteVersion"></param>
+        Public Sub Connect(ByVal asDatabaseFilePath As String, ByVal aiSQLiteVersion As Single)
 
             ' Create a connection string builder
             Dim builder As New DbConnectionStringBuilder()
             builder("Data Source") = asDatabaseFilePath
-            builder("Version") = aiVersion.ToString
+            builder("Version") = aiSQLiteVersion.ToString
 
             ' Get the connection string
             Dim connectionString As String = builder.ConnectionString

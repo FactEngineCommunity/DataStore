@@ -77,6 +77,19 @@ DataStore
  Parameterless Constructor.
  </summary>
 </member>
+<member name="M:DataStore.DataStore.Store.Connect(System.String)">
+ <summary>
+ Connects to the SQLite Database
+ </summary>
+ <param name="asDatabaseConnectionString"></param>
+</member>
+<member name="M:DataStore.DataStore.Store.Connect(System.String,System.Single)">
+ <summary>
+ Connects to the database and creates the DataStore table if it does not exist.
+ </summary>
+ <param name="asDatabaseFilePath"></param>
+ <param name="aiSQLiteVersion"></param>
+</member>
 <member name="M:DataStore.DataStore.Store.Add(System.Object)">
  <summary>
   AddObject method to add a new record to the DataStore table
